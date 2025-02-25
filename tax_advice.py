@@ -3,18 +3,27 @@ import requests
 from bs4 import BeautifulSoup
 from transformers import pipeline
 
-def summarize_text(text):
-    summarizer = pipeline("summarization")
+# Load a faster summarization model
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+
+def summarize_text(text, max_length=200, min_length=80):
+    """Summarize text using a Transformers model with better coverage."""
     try:
-        # Summarize the text in chunks if it's too long
-        max_chunk_size = 1000
+        max_chunk_size = 1500  # Increase chunk size to preserve context
         chunks = [text[i:i + max_chunk_size] for i in range(0, len(text), max_chunk_size)]
-        summaries = [summarizer(chunk, max_length=60, min_length=10, do_sample=False)[0]['summary_text'] for chunk in chunks]
-        return summaries
+        
+        # First pass: Summarize each chunk
+        summaries = [summarizer(chunk, max_length=max_length, min_length=min_length, do_sample=False)[0]['summary_text'] for chunk in chunks]
+        
+        # Second pass: Summarize the combined summaries to get a final concise summary
+        final_summary = summarizer(" ".join(summaries), max_length=max_length, min_length=min_length, do_sample=False)[0]['summary_text']
+        
+        return final_summary
     except Exception as e:
-        return [f"Error in summarization: {str(e)}"]
+        return f"Error in summarization: {str(e)}"
 
 def extract_text_from_url(url):
+    """Extract text content from a given URL."""
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -33,20 +42,29 @@ def show_tax_advice():
     """)
 
     url = st.text_input("Enter URL of the article:")
+    
+    st.markdown("""
+    <style>
+        div.stButton > button {
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: white !important;
+            background-color: #4CAF50 !important;
+            font-size: 16px !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     if st.button("Summarize"):
         if url:
-            with st.spinner("Extracting and summarizing the content..."):
+            with st.spinner("Extracting and summarizing the content... This may take a few minutes. Please wait patiently."):
                 text = extract_text_from_url(url)
                 if "Error" in text:
                     st.error(text)
                 else:
-                    summaries = summarize_text(text)
-                    if any("Error" in summary for summary in summaries):
-                        st.error(summaries[0])
-                    else:
-                        st.subheader("Summary of Do's and Don'ts")
-                        for summary in summaries:
-                            st.write(f"- {summary}")
+                    final_summary = summarize_text(text)
+                    st.subheader("Comprehensive Summary of Do's and Don'ts")
+                    st.write(final_summary)
         else:
             st.error("Please enter a valid URL.")
 
