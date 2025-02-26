@@ -18,8 +18,9 @@ Welcome to the Not-so-Taxing app! This application helps you manage your taxes b
 
 ## Setup Instructions
 
-### 1. Clone the Repository
-
+### 1. Clone the Repository  
 ```sh
 git clone https://github.com/yourusername/not-so-taxing.git
 cd not-so-taxing
+
+### 2.Create a Virtual Environment
