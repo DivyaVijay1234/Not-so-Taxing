@@ -45,6 +45,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 ### Running Tests
+These tests ensure all components are working correctly
 ```sh
 python -m unittest test_app.py
 ```
