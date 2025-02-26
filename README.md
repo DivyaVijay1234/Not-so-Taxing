@@ -2,6 +2,8 @@
 
 Welcome to the Not-so-Taxing app! This application helps you manage your taxes by providing features such as tax calculation, document checklist, expenditure analysis, and summarizing tax advice from financial advisors.
 
+For a better experience, use all feautures in the 'Dark Mode'
+
 ## Features
 
 - **Tax Filing Document Checklist**: Provides a list of mandatory and additional documents required for tax filing.
