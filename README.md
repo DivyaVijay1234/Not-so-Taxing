@@ -52,7 +52,7 @@ python -m unittest test_app.py
 Usage:
 *Navigation: Use the sidebar to navigate to different sections of the app.
 *Tax Calculator: Enter your annual income and select the tax regime to calculate your tax.
-*Expenditure Analysis: Upload your expenditure sheet to calculate total deductions.
+*Expenditure Analysis: Upload your expenditure sheet to calculate total deductions. A sample file titled'expenditure' has been provided
 *Tax Advice: Enter the URL of a financial advisor's article to get a summarized list of do's and don'ts for reducing taxes.
 
 Notes:
