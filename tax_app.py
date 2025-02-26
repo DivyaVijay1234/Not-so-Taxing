@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# Apply custom CSS to enhance visibility
+# Apply custom CSS for improved visibility
 st.markdown(
     """
     <style>
@@ -16,6 +16,18 @@ st.markdown(
         .stTextInput label, .stNumberInput label, .stRadio label, .stSelectbox label, .stFileUploader label {
             color: #FFFFFF !important;
             font-weight: bold;
+        }
+        /* Make input fields have white background with black text */
+        input, textarea, select {
+            background-color: white !important;
+            color: black !important;
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        .stNumberInput div[data-baseweb="input"] {
+            background-color: white !important;
+            color: black !important;
         }
     </style>
     """, 
@@ -36,7 +48,14 @@ def calculate_tax_new(income):
 
 def calculate_tax_old(income, deductions):
     taxable_income = max(0, income - deductions)
-    return calculate_tax_new(taxable_income)
+    if taxable_income <= 250000:
+        return 0
+    elif taxable_income <= 500000:
+        return (taxable_income - 250000) * 0.05
+    elif taxable_income <= 1000000:
+        return 250000 * 0.05 + (taxable_income - 500000) * 0.20
+    else:
+        return 250000 * 0.05 + 500000 * 0.20 + (taxable_income - 1000000) * 0.30
 
 def show_tax_app():
     st.markdown("<h1>Tax Filing Document Checklist and Tax Calculator</h1>", unsafe_allow_html=True)
@@ -97,10 +116,21 @@ def show_tax_app():
     income = st.number_input("Enter your annual income (in INR):", min_value=0, step=10000, key="income")
     tax_regime = st.radio("Select Tax Regime:", ("New Tax Regime", "Old Tax Regime"), key="tax_regime")
     
-    deductions = total_deductions
+    # Sum up all the deductions
+    deductions = (
+        total_deductions +
+        rent_paid +
+        (dependents * 25000) +  # Assuming 25000 per dependent for medical insurance
+        home_loan_interest +
+        ppf_epf_elss +
+        nps_contribution +
+        education_loan_interest +
+        donations
+    )
+    
     if st.button("Calculate Tax"):
         tax_amount = calculate_tax_new(income) if tax_regime == "New Tax Regime" else calculate_tax_old(income, deductions)
         st.markdown(f"<h2>Your calculated tax is: ₹{tax_amount:,.2f}</h2>", unsafe_allow_html=True)
 
 # Run the app
-show_tax_app()
+# show_tax_app()

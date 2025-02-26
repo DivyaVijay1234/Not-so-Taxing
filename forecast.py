@@ -13,6 +13,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 import streamlit as st
 
+@st.cache_data
 def extract_tax_data_from_pdf(pdf_path):
     pdf_document = fitz.open(pdf_path)
     page = pdf_document[4]  # Page 5 (index 4)
@@ -29,6 +30,46 @@ def extract_tax_data_from_pdf(pdf_path):
         data["Total Taxes (Rs. crore)"].append(int(total_tax.replace(',', '')))
     
     return pd.DataFrame(data)
+
+@st.cache_data
+def calculate_forecast(df):
+    df["Year"] = pd.to_datetime(df["Year"], format="%Y-%y")
+    df.set_index("Year", inplace=True)
+    
+    # ARIMA Model
+    arima_model = ARIMA(df['Total Taxes (Rs. crore)'], order=(2,1,2))
+    arima_model_fit = arima_model.fit()
+    future_arima = arima_model_fit.forecast(steps=5)
+    
+    # LSTM Model
+    scaler = MinMaxScaler(feature_range=(0,1))
+    data_scaled = scaler.fit_transform(df[['Total Taxes (Rs. crore)']])
+    
+    train_size = int(len(data_scaled) * 0.8)
+    train_data, test_data = data_scaled[:train_size], data_scaled[train_size:]
+    
+    def create_sequences(data, seq_length=3):
+        X, y = [], []
+        for i in range(len(data) - seq_length):
+            X.append(data[i:i+seq_length])
+            y.append(data[i+seq_length])
+        return np.array(X), np.array(y)
+    
+    X_train, y_train = create_sequences(train_data)
+    X_test, y_test = create_sequences(test_data)
+    
+    model = Sequential([
+        LSTM(50, activation='relu', return_sequences=True, input_shape=(X_train.shape[1], 1)),
+        LSTM(50, activation='relu'),
+        Dense(1)
+    ])
+    model.compile(optimizer='adam', loss='mse')
+    model.fit(X_train, y_train, epochs=50, batch_size=8, verbose=1, validation_data=(X_test, y_test))
+    
+    future_inputs = np.array([data_scaled[-3:]])
+    future_lstm = scaler.inverse_transform(model.predict(future_inputs))
+    
+    return future_arima, future_lstm
 
 def show_forecast():
     st.title("Tax Collection Forecast and Economic Analysis")
@@ -145,4 +186,4 @@ def show_forecast():
     """)
 
 # Call the function to display the forecast
-show_forecast()
+# show_forecast()
